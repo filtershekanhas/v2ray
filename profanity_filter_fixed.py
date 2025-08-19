@@ -527,13 +527,17 @@ async def show_global_locks(client, message):
     except Exception as e:
         await message.edit(f"❌ خطا: {e}")
 
-# اضافه کردن هندلرها با group=11
-try:
-    if not hasattr(app.dispatcher, '_profanity_handlers_added'):
+# تابع برای اضافه کردن هندلرها
+def setup_profanity_handlers(app):
+    """اضافه کردن هندلرهای فیلتر به اپ"""
+    try:
+        if hasattr(app, '_profanity_handlers_added'):
+            return
+            
         # فیلتر اصلی
         app.add_handler(MessageHandler(ultimate_filter, ~filters.me & (filters.private | filters.group)), group=11)
         
-        # دستورات قبلی
+        # دستورات مدیریت
         app.add_handler(MessageHandler(set_low_sensitivity, filters.me & filters.regex(r"^حساسیت پایین$")), group=11)
         app.add_handler(MessageHandler(set_medium_sensitivity, filters.me & filters.regex(r"^حساسیت متوسط$")), group=11)
         app.add_handler(MessageHandler(set_high_sensitivity, filters.me & filters.regex(r"^حساسیت بالا$")), group=11)
@@ -549,12 +553,21 @@ try:
         app.add_handler(MessageHandler(whitelist_remove_by_id, filters.me & filters.regex(r"^حذف ازاد \d+$")), group=11)
         app.add_handler(MessageHandler(whitelist_show, filters.me & filters.regex(r"^لیست آزاد$")), group=11)
         
-        # دستورات جدید قفل سراسری
+        # دستورات قفل سراسری
         app.add_handler(MessageHandler(global_lock_chat, filters.me & filters.regex(r"^قفل فحش سراسری در .+")), group=11)
         app.add_handler(MessageHandler(global_unlock_chat, filters.me & filters.regex(r"^حذف قفل سراسری .+")), group=11)
         app.add_handler(MessageHandler(show_global_locks, filters.me & filters.regex(r"^لیست قفل سراسری$")), group=11)
         
-        app.dispatcher._profanity_handlers_added = True
-        print("Enhanced profanity filter handlers loaded successfully!")
-except Exception as e:
-    print(f"Error loading profanity handlers: {e}")
+        app._profanity_handlers_added = True
+        print("✅ فیلتر فحش با موفقیت لود شد!")
+        
+    except Exception as e:
+        print(f"❌ خطا در لود فیلتر: {e}")
+
+# اگر app موجود باشه، هندلرها رو اضافه کن
+try:
+    if 'app' in globals():
+        setup_profanity_handlers(app)
+except:
+    print("⚠️ app یافت نشد - هندلرها بعداً اضافه می‌شوند")
+    print("برای فعال‌سازی: setup_profanity_handlers(app) را اجرا کنید")
