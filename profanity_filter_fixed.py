@@ -189,9 +189,10 @@ class UltimateProfanityFilter:
 if profanity_system["profanity_filter"] is None:
     profanity_system["profanity_filter"] = UltimateProfanityFilter()
 
-# فیلتر اصلی - درست شده کامل
+# فیلتر اصلی - ساده و کاربردی
 async def ultimate_filter(client, message):
     try:
+        # چک‌های اولیه
         if not profanity_system["filter_status"] or not message.from_user:
             return
         if message.from_user.id in profanity_system["whitelist_ids"]:
@@ -200,34 +201,37 @@ async def ultimate_filter(client, message):
         text = message.text or message.caption or ""
         if not text:
             return
+        
+        # چک فحش
+        is_bad = profanity_system["profanity_filter"].is_profane(text, profanity_system["filter_sensitivity"])
+        if not is_bad:
+            return
             
-        # چک کردن فیلتر پیوی - همه پیام‌ها بدون شرط چک می‌شوند
-        if message.chat.type in ["private"]:
-            if profanity_system["profanity_filter"].is_profane(text, profanity_system["filter_sensitivity"]):
+        # پیوی: همیشه حذف
+        if message.chat.type == "private":
+            try:
+                await message.delete()
+            except:
+                pass
+            return
+                    
+        # گروه: فقط اگر ریپلای روی ما باشه یا قفل سراسری باشه
+        if message.chat.type in ["group", "supergroup"]:
+            # چک ریپلای روی ما
+            if (profanity_system["reply_filter_enabled"] and 
+                message.reply_to_message and 
+                message.reply_to_message.from_user and 
+                message.reply_to_message.from_user.is_self):
                 try:
                     await message.delete()
-                    return
                 except:
                     pass
-            return  # پیوی رو کامل چک کردیم، خروج
-                    
-        # چک کردن فیلتر ریپلای در گروه
-        if profanity_system["reply_filter_enabled"] and message.reply_to_message:
-            # فقط اگر روی ما ریپلای کرده باشه
-            if message.reply_to_message.from_user and message.reply_to_message.from_user.is_self:
-                if profanity_system["profanity_filter"].is_profane(text, profanity_system["filter_sensitivity"]):
-                    try:
-                        await message.delete()
-                        return
-                    except:
-                        pass
+                return
                         
-        # چک کردن قفل سراسری در گروه
-        if message.chat.id in profanity_system["global_locked_chats"]:
-            if profanity_system["profanity_filter"].is_profane(text, profanity_system["filter_sensitivity"]):
+            # چک قفل سراسری
+            if message.chat.id in profanity_system["global_locked_chats"]:
                 try:
                     await message.delete()
-                    return
                 except:
                     pass
                     
