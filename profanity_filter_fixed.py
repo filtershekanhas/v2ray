@@ -189,7 +189,7 @@ class UltimateProfanityFilter:
 if profanity_system["profanity_filter"] is None:
     profanity_system["profanity_filter"] = UltimateProfanityFilter()
 
-# فیلتر اصلی - درست شده
+# فیلتر اصلی - درست شده کامل
 async def ultimate_filter(client, message):
     try:
         if not profanity_system["filter_status"] or not message.from_user:
@@ -201,7 +201,7 @@ async def ultimate_filter(client, message):
         if not text:
             return
             
-        # چک کردن فیلتر پیوی - همه پیام‌ها چک می‌شوند
+        # چک کردن فیلتر پیوی - همه پیام‌ها بدون شرط چک می‌شوند
         if message.chat.type in ["private"]:
             if profanity_system["profanity_filter"].is_profane(text, profanity_system["filter_sensitivity"]):
                 try:
@@ -209,10 +209,11 @@ async def ultimate_filter(client, message):
                     return
                 except:
                     pass
+            return  # پیوی رو کامل چک کردیم، خروج
                     
         # چک کردن فیلتر ریپلای در گروه
-        elif profanity_system["reply_filter_enabled"] and message.reply_to_message:
-            # فقط اگر روی ما ریپلای کرده باشه و در وایت لیست نباشه
+        if profanity_system["reply_filter_enabled"] and message.reply_to_message:
+            # فقط اگر روی ما ریپلای کرده باشه
             if message.reply_to_message.from_user and message.reply_to_message.from_user.is_self:
                 if profanity_system["profanity_filter"].is_profane(text, profanity_system["filter_sensitivity"]):
                     try:
@@ -222,7 +223,7 @@ async def ultimate_filter(client, message):
                         pass
                         
         # چک کردن قفل سراسری در گروه
-        elif message.chat.id in profanity_system["global_locked_chats"]:
+        if message.chat.id in profanity_system["global_locked_chats"]:
             if profanity_system["profanity_filter"].is_profane(text, profanity_system["filter_sensitivity"]):
                 try:
                     await message.delete()
